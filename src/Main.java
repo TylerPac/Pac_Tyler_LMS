@@ -7,185 +7,169 @@ Library Management System
 Tyler Pac
 CEN 3024C
 14320
-9/8/2024
+10/6/2024
+
+Main function is to read in file and add to library array, after that we go through options for different actions in a menu 
+to print, add/remove, and check in/out books for a library
  */
 public class Main {
-
     public static void main(String[] args) {
-        //scan for input from user
-        Scanner userInput = new Scanner(System.in);
-        int choice = -1;
+    	//ask user for input
+    	Scanner userInput = new Scanner(System.in);
+        // create instance for library
+    	Library library = new Library();
 
+        System.out.println("Enter the file name:");
+        String filename = userInput.nextLine();
+
+        // Load books from file into library and error handle
+        List<String> bookLines = ReadFile(filename);
+        for (String line : bookLines) {
+            String[] details = line.split(",");
+            if (details.length == 3) {
+                try {
+                	//get Barcode
+                    int barcode = Integer.parseInt(details[0].trim());  
+                    // Get Title
+                    String title = details[1].trim();
+                    // Get Author
+                    String author = details[2].trim();
+                    // Add the book to the library
+                    library.addBook(new Book(title, author, barcode)); 
+                } catch (NumberFormatException e) {
+                    System.out.println("Error: Invalid barcode format for line: " + line);
+                    continue; 
+                }
+            } else {
+                System.out.println("Error: Incorrect file format on line: " + line);
+            }
+        }
+        //print books
+        System.out.println("Printing all books:");
+        library.printBooks();
+        //menu
+        int choice = -1;
         do {
-            // Menu
             System.out.println("AddBook = 0");
-            System.out.println("RemoveBook = 1");
-            System.out.println("PrintBooks = 2");
-            System.out.println("Quit = 3");
+            System.out.println("RemoveBookByBarcode = 1");
+            System.out.println("RemoveBookByTitle = 2");
+            System.out.println("PrintBooks = 3");
+            System.out.println("CheckOutBook = 4");
+            System.out.println("CheckInBook = 5");
+            System.out.println("Quit = 6");
             System.out.println("------------");
             System.out.println("Enter your choice:");
 
-            // Validate the user input
             try {
                 choice = userInput.nextInt();
             } catch (InputMismatchException e) {
-                System.out.println("Invalid choice, please enter a valid number (0, 1, 2, or 3).");
-                // Clear the invalid input
-                userInput.next();
+                System.out.println("Invalid choice, please enter a valid number.");
+                userInput.next();  // Clear invalid input
                 continue;
             }
 
+            userInput.nextLine();  // Consume newline
+
             switch (choice) {
                 case 0:
-                    System.out.println("Please Enter Book Title");
-
-                    userInput.nextLine(); // Consume the newline character after nextInt
-                    //create strings for format framework
-                    String title = "";
-                    String author = "";
-                    String authorAndtitle = "";
-
-                    System.out.println("Enter the title:");
-                    title = userInput.nextLine();
-                    System.out.println("Please Enter Book Author");
-                    author = userInput.nextLine();
-                    //framework for formatting
-                    authorAndtitle = title + "," + author;
-
-                    // Read the file and sort the lines
-                    List<String> linesList = ReadFile("src/sortedData.txt");
-                    //check for empty authorAndTitle
-                    if (!authorAndtitle.isEmpty()) {
-                        linesList.add(authorAndtitle); // Add the title to the list before sorting
-                    }
-                    // Sort alphabetically
-                    Collections.sort(linesList);
-
-                    // Write the sorted lines to the output file
-                    WriteFile(linesList, "src/sortedData.txt");
+                	// enter info for books
+                    System.out.println("Enter title:");
+                    String title = userInput.nextLine();
+                    System.out.println("Enter author:");
+                    String author = userInput.nextLine();
+                    System.out.println("Enter barcode:");
+                    int barcode = userInput.nextInt();
+                    //add to library array
+                    library.addBook(new Book(title, author, barcode));
+                    System.out.println("Book added successfully.");
+                    //print books after adding
+                    System.out.println("Printing all books:");
+                    library.printBooks();
                     break;
-
                 case 1:
-                    System.out.println("What Book do you want to remove? (enter Book ID)");
-                    int BookID = -1;
-
-                    // Validate the user input for the book ID
-                    try {
-                        BookID = userInput.nextInt();
-                    } catch (InputMismatchException e) {
-                        System.out.println("Invalid input, please enter a valid number (integer).");
-                        // Clear the invalid input
-                        userInput.next();
-                        continue;
-                    }
-                    //call remove line function
-                    RemoveLineByNumber("src/sortedData.txt", BookID);
-                    // read file to list
-                    List<String> resortlines = ReadFile("src/sortedData.txt");
-                    // sort list
-                    Collections.sort(resortlines);
-
-                    // Write the sorted lines to the output file
-                    WriteFile(resortlines, "src/sortedData.txt");
+                	//ask for barcode
+                    System.out.println("Enter barcode of the book to remove:");
+                    int removeBarcode = userInput.nextInt();
+                    //remove book by barcode
+                    library.removeBookByBarcode(removeBarcode);
+                    System.out.println("Book with" + removeBarcode +" Barcode removed.");
+                    //print books after removing a book
+                    System.out.println("Printing all books:");
+                    library.printBooks();
                     break;
-
                 case 2:
-                    System.out.println("Displaying all Books");
-                    // call printfile
-                    PrintFile("src/sortedData.txt");
+                    System.out.println("Enter title of the book to remove:");
+                    String removeTitle = userInput.nextLine();
+                    //remove book by title
+                    library.removeBookByTitle(removeTitle);
+                    System.out.println("Book with" + removeTitle +" Title removed.");
+                    //print books after removing a book
+                    System.out.println("Printing all books:");
+                    library.printBooks();
                     break;
-
                 case 3:
+                	//print all books
+                    System.out.println("Printing all books:");
+                    library.printBooks();
+                    break;
+                case 4:
+                	//ask for book to check out
+                    System.out.println("Enter title to check out:");
+                    String checkoutTitle = userInput.nextLine();
+                	//find book to check out
+                    Book bookToCheckout = library.findBookByTitle(checkoutTitle);
+                	//error handle
+                    if (bookToCheckout != null && !bookToCheckout.isCheckedOut()) {
+                    	//set status of book
+                        bookToCheckout.checkOut();
+                        System.out.println(checkoutTitle + "checked out.");
+                    } else {
+                        System.out.println(checkoutTitle + " not available to be checked out.");
+                    }
+                    //print all books to show updated status
+                    System.out.println("Printing all books:");
+                    library.printBooks();
+                    break;
+                case 5:
+                	//ask for book to check in
+                    System.out.println("Enter title to check in:");
+                    String checkinTitle = userInput.nextLine();
+                	//find book to check in
+                    Book bookToCheckIn = library.findBookByTitle(checkinTitle);
+                	//error handle
+                    if (bookToCheckIn != null && bookToCheckIn.isCheckedOut()) {
+                    	//set status of book
+                        bookToCheckIn.checkIn();
+                        System.out.println(checkinTitle + " checked in.");
+                    } else {
+                        System.out.println(checkinTitle + " has not been checkout out cant checkin.");
+                    }
+                    //print all books to show updated status
+                    System.out.println("Printing all books:");
+                    library.printBooks();
+                    break;
+                case 6:
                     System.out.println("Quitting the program.");
                     break;
-
                 default:
-                    //incase of bad input
-                    System.out.println("Invalid choice, please enter 0, 1, 2, or 3.");
+                    System.out.println("Invalid choice.");
                     break;
             }
 
-        } while (choice != 3); // Loop until choice is 3
+        } while (choice != 6);
 
-        //close input
         userInput.close();
     }
 
+    // Method to read file content and return as a list of strings
     public static List<String> ReadFile(String filename) {
-
         List<String> readLines = new ArrayList<>();
         try {
-            //read lines from file assign to list readLines
+            // Read lines from file and assign to list
             readLines = Files.readAllLines(Paths.get(filename), Charset.defaultCharset());
-
-            // Remove any leading numbers and commas from the lines
-            for (int i = 0; i < readLines.size(); i++) {
-                String line = readLines.get(i).trim();
-                line = line.replaceFirst("^\\d+,", ""); // This regex removes leading numbers followed by a comma
-                readLines.set(i, line);
-            }
-
         } catch (IOException x) {
             System.err.format("Read file error: %s%n", x);
         }
-
         return readLines;
-    }
-
-    public static void PrintFile(String filename) {
-        List<String> readLines = new ArrayList<>();
-        try {
-            //read lines from file assign to readLines list
-            readLines = Files.readAllLines(Paths.get(filename), Charset.defaultCharset());
-
-            // Print the lines with numbering
-            for (String line : readLines) {
-                System.out.println(line.trim());
-            }
-
-        } catch (IOException x) {
-            System.err.format("Read file error: %s%n", x);
-        }
-    }
-
-    public static void WriteFile(List<String> linesList, String filename) {
-        List<String> numberedLines = new ArrayList<>();
-        //initialize ID/LineNumber
-        int lineNumber = 1;
-        for (String line : linesList) {
-            // formating for ID and adding to list
-            numberedLines.add(lineNumber + "," + line);
-            lineNumber++;
-        }
-        try {
-            //writing to file
-            Files.write(Paths.get(filename), numberedLines, Charset.defaultCharset());
-        } catch (IOException x) {
-            System.err.format("Write file error: %s%n", x);
-        }
-    }
-
-    public static void RemoveLineByNumber(String filename, int lineNumber) {
-        List<String> readLines = new ArrayList<>();
-        try {
-            // Read all lines from the file
-            readLines = Files.readAllLines(Paths.get(filename), Charset.defaultCharset());
-
-            // Check if the line number is valid
-            if (lineNumber > 0 && lineNumber <= readLines.size()) {
-                // Remove the line at the given index (lineNumber - 1)
-                readLines.remove(lineNumber - 1);
-
-                // Write the updated lines back to the file
-                Files.write(Paths.get(filename), readLines, Charset.defaultCharset());
-
-                System.out.println("Line " + lineNumber + " removed successfully.");
-            } else {
-                System.out.println("Invalid line number.");
-            }
-
-        } catch (IOException x) {
-            System.err.format("File operation error: %s%n", x);
-        }
     }
 }
